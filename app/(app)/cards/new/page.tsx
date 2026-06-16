@@ -8,9 +8,14 @@ import {
   IconQrcode,
   IconCamera,
   IconCircleCheck,
+  IconX,
 } from "@tabler/icons-react"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
+import dynamic from "next/dynamic"
+
+const BarcodeScanner = dynamic(() => import("@/components/scanner/BarcodeScanner"), { ssr: false })
+const PhotoCapture = dynamic(() => import("@/components/scanner/PhotoCapture"), { ssr: false })
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -262,6 +267,13 @@ function StoreSearchInput({
 
 // ─── Step 2: Card details ─────────────────────────────────────────────────────
 
+const FORMAT_MAP: Record<string, BarcodeFormat> = {
+  QR_CODE: "QR_CODE",
+  CODE_128: "CODE_128",
+  EAN_13: "EAN_13",
+  EAN_8: "EAN_8",
+}
+
 function StepCardDetails({
   cardType,
   onBack,
@@ -279,18 +291,26 @@ function StepCardDetails({
   const [phoneId, setPhoneId] = useState("")
   const [barcodeValue, setBarcodeValue] = useState("")
   const [barcodeFormat, setBarcodeFormat] = useState<BarcodeFormat>("QR_CODE")
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [showScanner, setShowScanner] = useState(false)
+  const [showCamera, setShowCamera] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const isPhoneId = cardType === "PHONE_ID"
-  const needsBarcode = cardType === "BARCODE" || cardType === "PHOTO"
+  const isBarcode = cardType === "BARCODE"
+  const isPhoto = cardType === "PHOTO"
 
   const displayName = storeId ? storeName : storeNameCustom || storeName
 
   const valid =
     displayName.trim() &&
     holderName.trim() &&
-    (isPhoneId ? phoneId.trim() : barcodeValue.trim())
+    (isPhoneId
+      ? phoneId.trim()
+      : isBarcode
+      ? barcodeValue.trim()
+      : photoDataUrl != null || barcodeValue.trim())
 
   async function handleSubmit() {
     if (!valid) return
@@ -306,7 +326,11 @@ function StepCardDetails({
       if (isPhoneId) {
         payload.cardPhoneId = { phoneNumber: phoneId }
       } else {
-        payload.cardPhoto = { barcodeValue, barcodeFormat }
+        payload.cardPhoto = {
+          barcodeValue: barcodeValue || undefined,
+          barcodeFormat: barcodeValue ? barcodeFormat : undefined,
+          photoUrl: photoDataUrl || undefined,
+        }
       }
       await api.post("/cards", payload)
       onSuccess(displayName)
@@ -320,120 +344,192 @@ function StepCardDetails({
   }
 
   return (
-    <div className="max-w-md mx-auto flex flex-col min-h-screen bg-white px-5 pt-10 pb-24">
-      <PageHeader onBack={onBack} title="Card details" />
+    <>
+      {/* Overlays — rendered outside the scroll container */}
+      {showScanner && (
+        <BarcodeScanner
+          onScan={(value, format) => {
+            setBarcodeValue(value)
+            const mapped = FORMAT_MAP[format]
+            if (mapped) setBarcodeFormat(mapped)
+            setShowScanner(false)
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+      {showCamera && (
+        <PhotoCapture
+          onCapture={(dataUrl) => {
+            setPhotoDataUrl(dataUrl)
+            setShowCamera(false)
+          }}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
 
-      <div className="flex flex-col gap-5">
-        {/* Store name */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-700">Store name</label>
-          <StoreSearchInput
-            value={storeName}
-            onChange={(v) => {
-              setStoreName(v)
-              setStoreId(null)
-              setStoreNameCustom("")
-            }}
-            onSelect={(store, custom) => {
-              if (store) {
-                setStoreId(store.id)
-                setStoreNameCustom("")
-              } else {
-                setStoreId(null)
-                setStoreNameCustom(custom)
-              }
-            }}
-          />
-        </div>
+      <div className="max-w-md mx-auto flex flex-col min-h-screen bg-white px-5 pt-10 pb-24">
+        <PageHeader onBack={onBack} title="Card details" />
 
-        {/* Your name */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-700">Your name</label>
-          <input
-            type="text"
-            value={holderName}
-            onChange={(e) => setHolderName(e.target.value)}
-            placeholder="As it appears on your card"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition"
-          />
-        </div>
-
-        {/* Card color */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-700">Card color</label>
-          <div className="flex gap-3">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setColor(c)}
-                className={`w-8 h-8 rounded-full flex-shrink-0 transition ${
-                  color === c ? "ring-2 ring-offset-2 ring-zinc-900" : ""
-                }`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Phone / ID */}
-        {isPhoneId && (
+        <div className="flex flex-col gap-5">
+          {/* Store name */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-700">Phone number or member ID</label>
+            <label className="text-sm font-medium text-zinc-700">Store name</label>
+            <StoreSearchInput
+              value={storeName}
+              onChange={(v) => {
+                setStoreName(v)
+                setStoreId(null)
+                setStoreNameCustom("")
+              }}
+              onSelect={(store, custom) => {
+                if (store) {
+                  setStoreId(store.id)
+                  setStoreNameCustom("")
+                } else {
+                  setStoreId(null)
+                  setStoreNameCustom(custom)
+                }
+              }}
+            />
+          </div>
+
+          {/* Your name */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-zinc-700">Your name</label>
             <input
               type="text"
-              value={phoneId}
-              onChange={(e) => setPhoneId(e.target.value)}
-              placeholder="+63 912 345 6789"
+              value={holderName}
+              onChange={(e) => setHolderName(e.target.value)}
+              placeholder="As it appears on your card"
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition"
             />
           </div>
-        )}
 
-        {/* Barcode */}
-        {needsBarcode && (
-          <>
+          {/* Card color */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-700">Card color</label>
+            <div className="flex gap-3">
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`w-8 h-8 rounded-full flex-shrink-0 transition ${
+                    color === c ? "ring-2 ring-offset-2 ring-zinc-900" : ""
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Phone / ID */}
+          {isPhoneId && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-700">Barcode value</label>
+              <label className="text-sm font-medium text-zinc-700">Phone number or member ID</label>
               <input
                 type="text"
-                value={barcodeValue}
-                onChange={(e) => setBarcodeValue(e.target.value)}
-                placeholder="Enter barcode number"
+                value={phoneId}
+                onChange={(e) => setPhoneId(e.target.value)}
+                placeholder="+63 912 345 6789"
                 className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition"
               />
             </div>
+          )}
 
+          {/* Barcode scanner */}
+          {isBarcode && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-700">Barcode / QR code</label>
+                <button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl border-2 border-dashed border-zinc-200 text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 transition"
+                >
+                  <IconQrcode size={18} stroke={1.5} />
+                  {barcodeValue ? "Scan again" : "Scan Barcode / QR"}
+                </button>
+                {barcodeValue && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-zinc-50 rounded-lg border border-zinc-200">
+                    <span className="flex-1 text-sm font-mono text-zinc-900 truncate">{barcodeValue}</span>
+                    <span className="text-xs text-zinc-400">{barcodeFormat}</span>
+                    <button onClick={() => { setBarcodeValue(""); setBarcodeFormat("QR_CODE") }}>
+                      <IconX size={14} className="text-zinc-400 hover:text-zinc-700" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-700">Or enter manually</label>
+                <input
+                  type="text"
+                  value={barcodeValue}
+                  onChange={(e) => setBarcodeValue(e.target.value)}
+                  placeholder="Enter barcode number"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-700">Barcode format</label>
+                <select
+                  value={barcodeFormat}
+                  onChange={(e) => setBarcodeFormat(e.target.value as BarcodeFormat)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition appearance-none"
+                >
+                  {BARCODE_FORMATS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Photo capture */}
+          {isPhoto && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-700">Barcode format</label>
-              <select
-                value={barcodeFormat}
-                onChange={(e) => setBarcodeFormat(e.target.value as BarcodeFormat)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition appearance-none"
-              >
-                {BARCODE_FORMATS.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <label className="text-sm font-medium text-zinc-700">Card photo</label>
+              {photoDataUrl ? (
+                <div className="relative rounded-xl overflow-hidden border border-zinc-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photoDataUrl} alt="Card photo" className="w-full object-cover rounded-xl" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoDataUrl(null)}
+                    className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 text-white"
+                  >
+                    <IconX size={14} stroke={2} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl border-2 border-dashed border-zinc-200 text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 transition"
+                >
+                  <IconCamera size={18} stroke={1.5} />
+                  Open Camera
+                </button>
+              )}
             </div>
-          </>
-        )}
+          )}
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
 
-        <PrimaryButton disabled={!valid} loading={loading} onClick={handleSubmit}>
-          Add card
-        </PrimaryButton>
+          <PrimaryButton disabled={!valid} loading={loading} onClick={handleSubmit}>
+            Add card
+          </PrimaryButton>
+        </div>
+
+        <BottomNav />
       </div>
-
-      <BottomNav />
-    </div>
+    </>
   )
 }
 
