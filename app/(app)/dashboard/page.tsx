@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { IconPlus } from "@tabler/icons-react"
 import api from "@/lib/api"
 import LoyaltyCard from "@/components/cards/LoyaltyCard"
@@ -20,6 +21,7 @@ interface Card {
 const FILTERS = ["All", "Grocery", "Pharmacy", "Food", "Fashion", "Convenience", "Bookstore"]
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCard, setActiveCard] = useState(0)
@@ -36,7 +38,7 @@ export default function DashboardPage() {
   const stackHeight = loading ? 130 + 2 * 52 : (cards.length > 0 ? cards.length * 52 + 130 : 130)
 
   return (
-    <div className="px-5 pt-10 pb-24 bg-zinc-50 min-h-screen">
+    <div className="max-w-md mx-auto min-h-screen bg-white px-5 pt-10 pb-24">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -74,18 +76,22 @@ export default function DashboardPage() {
           </div>
         ) : (
           cards.map((card, i) => (
-            <LoyaltyCard
+            <div
               key={card.id}
-              id={card.id}
-              storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
-              cardholderName={card.cardholderName || ""}
-              type={card.type}
-              color={card.color}
-              cardNumber={card.cardPhoneId?.cardNumber}
-              phoneNumber={card.cardPhoneId?.phoneNumber}
-              index={i}
-              total={cards.length}
-            />
+              className="absolute w-full cursor-pointer"
+              style={{ top: i * 52, zIndex: i, height: 130 }}
+              onClick={() => router.push(`/cards/${card.id}`)}
+            >
+              <LoyaltyCard
+                id={card.id}
+                storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
+                cardholderName={card.cardholderName || ""}
+                type={card.type}
+                color={card.color}
+                cardNumber={card.cardPhoneId?.cardNumber}
+                phoneNumber={card.cardPhoneId?.phoneNumber}
+              />
+            </div>
           ))
         )}
       </div>

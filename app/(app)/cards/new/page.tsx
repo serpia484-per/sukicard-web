@@ -126,7 +126,7 @@ function StepChooseType({
   onBack: () => void
 }) {
   return (
-    <div className="flex flex-col min-h-screen px-5 pt-10 pb-24 bg-zinc-50">
+    <div className="max-w-md mx-auto flex flex-col min-h-screen bg-white px-5 pt-10 pb-24">
       <PageHeader onBack={onBack} />
 
       <h1 className="text-[22px] font-medium text-zinc-900 tracking-tight">Add a card</h1>
@@ -320,7 +320,7 @@ function StepCardDetails({
   }
 
   return (
-    <div className="flex flex-col min-h-screen px-5 pt-10 pb-24 bg-zinc-50">
+    <div className="max-w-md mx-auto flex flex-col min-h-screen bg-white px-5 pt-10 pb-24">
       <PageHeader onBack={onBack} title="Card details" />
 
       <div className="flex flex-col gap-5">
@@ -442,7 +442,7 @@ function StepCardDetails({
 function StepSuccess({ storeName }: { storeName: string }) {
   const router = useRouter()
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-5 pb-24 bg-zinc-50 text-center">
+    <div className="max-w-md mx-auto flex flex-col items-center justify-center min-h-screen bg-white px-5 pb-24 text-center">
       <IconCircleCheck size={64} stroke={1.5} className="text-emerald-500 mb-5" />
       <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Card added!</h1>
       <p className="text-sm text-zinc-500 mt-2">
