@@ -317,8 +317,10 @@ function StepCardDetails({
     setError("")
     setLoading(true)
     try {
+      // API CardType enum: PHONE_ID | PHOTO | PARTNER — BARCODE maps to PHOTO
+      const apiType = cardType === "BARCODE" ? "PHOTO" : cardType
       const payload: Record<string, unknown> = {
-        type: cardType,
+        type: apiType,
         color,
         ...(storeId ? { storeId } : { storeNameCustom: displayName }),
         cardholderName: holderName,
@@ -332,11 +334,14 @@ function StepCardDetails({
           photoUrl: photoDataUrl || undefined,
         }
       }
+      console.log("[add card] payload:", JSON.stringify(payload))
       await api.post("/cards", payload)
       onSuccess(displayName)
     } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: unknown; status?: number } }
+      console.error("[add card] error:", axiosErr.response?.status, axiosErr.response?.data)
       const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        (axiosErr.response?.data as { message?: string })?.message
       setError(message ?? "Failed to add card. Please try again.")
     } finally {
       setLoading(false)
