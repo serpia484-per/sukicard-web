@@ -1,8 +1,9 @@
-type CardType = "PHONE_ID" | "PHOTO" | "PARTNER"
+type CardType = "PHONE_ID" | "PHOTO" | "BARCODE" | "PARTNER"
 
 const TYPE_LABELS: Record<CardType, string> = {
   PHONE_ID: "Phone ID",
   PHOTO: "Photo",
+  BARCODE: "Barcode",
   PARTNER: "Partner",
 }
 

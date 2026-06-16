@@ -317,10 +317,8 @@ function StepCardDetails({
     setError("")
     setLoading(true)
     try {
-      // API CardType enum: PHONE_ID | PHOTO | PARTNER — BARCODE maps to PHOTO
-      const apiType = cardType === "BARCODE" ? "PHOTO" : cardType
       const payload: Record<string, unknown> = {
-        type: apiType,
+        type: cardType,
         color,
         ...(storeId ? { storeId } : { storeNameCustom: displayName }),
         cardholderName: holderName,

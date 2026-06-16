@@ -13,7 +13,7 @@ interface Card {
   store?: { name: string }
   storeNameCustom?: string
   cardholderName?: string
-  type: "PHONE_ID" | "PHOTO" | "PARTNER"
+  type: "PHONE_ID" | "PHOTO" | "BARCODE" | "PARTNER"
   color: string
   cardPhoneId?: { phoneNumber?: string; cardNumber?: string }
 }

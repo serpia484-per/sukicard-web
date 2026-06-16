@@ -8,16 +8,18 @@ import {
   IconPalette,
   IconX,
 } from "@tabler/icons-react"
+import { QRCodeSVG } from "qrcode.react"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type CardType = "PHONE_ID" | "PHOTO" | "PARTNER"
+type CardType = "PHONE_ID" | "PHOTO" | "BARCODE" | "PARTNER"
 
 const TYPE_LABELS: Record<CardType, string> = {
   PHONE_ID: "Phone ID",
   PHOTO: "Photo",
+  BARCODE: "Barcode",
   PARTNER: "Partner",
 }
 
@@ -40,7 +42,7 @@ interface CardDetail {
   store?: { name: string }
   storeNameCustom?: string
   cardPhoneId?: { phoneNumber?: string; cardNumber?: string }
-  cardPhoto?: { barcodeValue?: string }
+  cardPhoto?: { barcodeValue?: string; barcodeFormat?: string }
   createdAt?: string
 }
 
@@ -67,6 +69,8 @@ function resolveIdentifier(card: CardDetail): string {
 function CardVisual({ card }: { card: CardDetail }) {
   const storeName = card.storeNameCustom ?? card.store?.name ?? "Unknown store"
   const identifier = resolveIdentifier(card)
+  const isQR = card.type === "BARCODE" && card.cardPhoto?.barcodeFormat === "QR_CODE"
+  const isOtherBarcode = card.type === "BARCODE" && !isQR
 
   return (
     <div
@@ -86,15 +90,33 @@ function CardVisual({ card }: { card: CardDetail }) {
         </span>
       </div>
 
-      {/* Center identifier */}
-      {identifier && (
+      {/* Center — QR code, barcode value, or phone/ID */}
+      {isQR && identifier ? (
+        <div className="flex flex-col items-center gap-1">
+          <QRCodeSVG
+            value={identifier}
+            size={100}
+            bgColor="transparent"
+            fgColor="white"
+          />
+          <span
+            className="font-mono text-center"
+            style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", letterSpacing: 1 }}
+          >
+            {identifier}
+          </span>
+        </div>
+      ) : identifier ? (
         <span
           className="text-white font-mono text-center w-full"
-          style={{ fontSize: 20, letterSpacing: 2 }}
+          style={{
+            fontSize: isOtherBarcode ? 16 : 20,
+            letterSpacing: isOtherBarcode ? 3 : 2,
+          }}
         >
           {identifier}
         </span>
-      )}
+      ) : null}
 
       {/* Bottom */}
       <div className="flex justify-end">
