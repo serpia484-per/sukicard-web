@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { IconSearch, IconBuildingStore } from "@tabler/icons-react"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ function StoreRow({ store, index }: { store: Store; index: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StoresPage() {
+  useAuth()
   const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")

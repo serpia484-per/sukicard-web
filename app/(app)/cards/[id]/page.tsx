@@ -11,6 +11,7 @@ import {
 import { QRCodeSVG } from "qrcode.react"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -248,6 +249,7 @@ function Skeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CardDetailPage() {
+  useAuth()
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
 

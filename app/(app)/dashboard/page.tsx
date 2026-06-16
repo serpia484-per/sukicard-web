@@ -7,6 +7,7 @@ import { IconPlus } from "@tabler/icons-react"
 import api from "@/lib/api"
 import LoyaltyCard from "@/components/cards/LoyaltyCard"
 import BottomNav from "@/components/layout/BottomNav"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 interface Card {
   id: string
@@ -21,6 +22,7 @@ interface Card {
 const FILTERS = ["All", "Grocery", "Pharmacy", "Food", "Fashion", "Convenience", "Bookstore"]
 
 export default function DashboardPage() {
+  useAuth()
   const router = useRouter()
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)

@@ -13,6 +13,7 @@ import {
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
 import dynamic from "next/dynamic"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 const BarcodeScanner = dynamic(() => import("@/components/scanner/BarcodeScanner"), { ssr: false })
 const PhotoCapture = dynamic(() => import("@/components/scanner/PhotoCapture"), { ssr: false })
@@ -562,6 +563,7 @@ function StepSuccess({ storeName }: { storeName: string }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function NewCardPage() {
+  useAuth()
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [cardType, setCardType] = useState<CardType | null>(null)
