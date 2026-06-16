@@ -28,11 +28,15 @@ export default function DashboardPage() {
   const [activeFilter, setActiveFilter] = useState("All")
 
   useEffect(() => {
+    console.time("[dashboard] GET /cards")
     api
       .get("/cards")
       .then(({ data }) => setCards(data))
       .catch(() => setCards([]))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        console.timeEnd("[dashboard] GET /cards")
+        setLoading(false)
+      })
   }, [])
 
   const stackHeight = loading ? 130 + 2 * 52 : (cards.length > 0 ? cards.length * 52 + 130 : 130)
