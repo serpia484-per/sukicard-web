@@ -47,9 +47,15 @@ export default function DashboardPage() {
   }, [])
 
   const totalPages = Math.ceil(cards.length / PAGE_SIZE)
-  const visibleCards = cards.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
-  const stackHeight = loading ? 130 + 2 * 52 : visibleCards.length > 0 ? visibleCards.length * 52 + 130 : 130
 
+  // Height is based on max cards per page (5), except when there's only one partial page
+  const maxCardsOnAnyPage = loading ? 3 : cards.length === 0 ? 0 : Math.min(PAGE_SIZE, cards.length)
+  const stackHeight = loading ? 130 + 2 * 52 : cards.length === 0 ? 130 : maxCardsOnAnyPage * 52 + 130
+
+  // Split cards into pages
+  const pages = Array.from({ length: Math.max(1, totalPages) }, (_, p) =>
+    cards.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE)
+  )
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white px-5 pt-10 pb-24">
@@ -69,9 +75,9 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Card stack */}
+      {/* Carousel outer — clips overflow */}
       <div
-        className="relative mb-8"
+        className="overflow-hidden mb-8"
         style={{ height: stackHeight }}
         onTouchStart={(e) => {
           touchStartX.current = e.touches[0].clientX
@@ -94,8 +100,17 @@ export default function DashboardPage() {
           }
         }}
       >
+        {/* Carousel inner — slides horizontally */}
+        <div
+          className="flex h-full"
+          style={{
+            width: `${Math.max(1, totalPages) * 100}%`,
+            transform: `translateX(-${currentPage * (100 / Math.max(1, totalPages))}%)`,
+            transition: "transform 0.3s ease",
+          }}
+        >
           {loading ? (
-            <>
+            <div className="relative h-full" style={{ width: `${100 / 1}%`, flexShrink: 0 }}>
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
@@ -103,34 +118,48 @@ export default function DashboardPage() {
                   style={{ top: i * 52, height: 130, zIndex: i }}
                 />
               ))}
-            </>
+            </div>
           ) : cards.length === 0 ? (
-            <div className="w-full h-[130px] rounded-[18px] border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
-              <p className="text-sm text-zinc-400">No cards yet</p>
-              <Link href="/cards/new" className="text-xs font-medium text-zinc-900 underline">
-                Add your first card
-              </Link>
+            <div
+              className="h-full flex items-center justify-center"
+              style={{ width: "100%", flexShrink: 0 }}
+            >
+              <div className="w-full h-[130px] rounded-[18px] border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
+                <p className="text-sm text-zinc-400">No cards yet</p>
+                <Link href="/cards/new" className="text-xs font-medium text-zinc-900 underline">
+                  Add your first card
+                </Link>
+              </div>
             </div>
           ) : (
-            visibleCards.map((card, i) => (
+            pages.map((pageCards, p) => (
               <div
-                key={card.id}
-                className="absolute w-full cursor-pointer"
-                style={{ top: i * 52, zIndex: i, height: 130 }}
-                onClick={() => router.push(`/cards/${card.id}`)}
+                key={p}
+                className="relative h-full"
+                style={{ width: `${100 / totalPages}%`, flexShrink: 0 }}
               >
-                <LoyaltyCard
-                  id={card.id}
-                  storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
-                  cardholderName={card.cardholderName || ""}
-                  type={card.type}
-                  color={card.color}
-                  cardNumber={card.cardPhoneId?.cardNumber}
-                  phoneNumber={card.cardPhoneId?.phoneNumber}
-                />
+                {pageCards.map((card, i) => (
+                  <div
+                    key={card.id}
+                    className="absolute w-full cursor-pointer"
+                    style={{ top: i * 52, zIndex: i, height: 130 }}
+                    onClick={() => router.push(`/cards/${card.id}`)}
+                  >
+                    <LoyaltyCard
+                      id={card.id}
+                      storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
+                      cardholderName={card.cardholderName || ""}
+                      type={card.type}
+                      color={card.color}
+                      cardNumber={card.cardPhoneId?.cardNumber}
+                      phoneNumber={card.cardPhoneId?.phoneNumber}
+                    />
+                  </div>
+                ))}
               </div>
             ))
           )}
+        </div>
       </div>
 
       {/* Page dots */}
