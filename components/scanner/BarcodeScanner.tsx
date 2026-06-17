@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { IconX } from "@tabler/icons-react"
+import { IconX, IconPhoto } from "@tabler/icons-react"
 import { BrowserMultiFormatReader } from "@zxing/browser"
 import { NotFoundException } from "@zxing/library"
 
@@ -13,8 +13,10 @@ interface BarcodeScannerProps {
 export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const readerRef = useRef<BrowserMultiFormatReader | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(true)
   const [lineY, setLineY] = useState(0)
+  const [galleryError, setGalleryError] = useState("")
   const animRef = useRef<number | null>(null)
   const dirRef = useRef(1)
 
@@ -53,8 +55,36 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
     }
   }, [onScan])
 
+  async function handleGalleryFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setGalleryError("")
+    const url = URL.createObjectURL(file)
+    try {
+      const reader = readerRef.current ?? new BrowserMultiFormatReader()
+      const result = await reader.decodeFromImageUrl(url)
+      setScanning(false)
+      try { BrowserMultiFormatReader.releaseAllStreams() } catch {}
+      onScan(result.getText(), result.getBarcodeFormat().toString())
+    } catch {
+      setGalleryError("No barcode found in image. Try again.")
+    } finally {
+      URL.revokeObjectURL(url)
+      e.target.value = ""
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGalleryFile}
+      />
+
       {/* Close button */}
       <button
         onClick={() => {
@@ -102,6 +132,20 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
         <p className="relative z-10 mt-6 text-sm text-white/70">
           {scanning ? "Point camera at barcode or QR code" : "Scanned!"}
         </p>
+
+        {/* Gallery button */}
+        <div className="relative z-10 mt-4 w-64 flex flex-col items-center gap-2 pointer-events-auto">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/40 text-white text-sm font-medium hover:bg-white/10 transition"
+          >
+            <IconPhoto size={16} stroke={1.5} />
+            Choose from gallery
+          </button>
+          {galleryError && (
+            <p className="text-xs text-red-400 text-center">{galleryError}</p>
+          )}
+        </div>
       </div>
     </div>
   )
