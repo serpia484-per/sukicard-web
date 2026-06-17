@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { IconPlus } from "@tabler/icons-react"
@@ -20,14 +20,19 @@ interface Card {
 }
 
 const FILTERS = ["All", "Grocery", "Pharmacy", "Food", "Fashion", "Convenience", "Bookstore"]
+const PAGE_SIZE = 5
 
 export default function DashboardPage() {
   useAuth()
   const router = useRouter()
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeCard, setActiveCard] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
   const [activeFilter, setActiveFilter] = useState("All")
+
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const mouseStartX = useRef(0)
 
   useEffect(() => {
     console.time("[dashboard] GET /cards")
@@ -41,7 +46,10 @@ export default function DashboardPage() {
       })
   }, [])
 
-  const stackHeight = loading ? 130 + 2 * 52 : (cards.length > 0 ? cards.length * 52 + 130 : 130)
+  const totalPages = Math.ceil(cards.length / PAGE_SIZE)
+  const visibleCards = cards.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
+  const stackHeight = loading ? 130 + 2 * 52 : visibleCards.length > 0 ? visibleCards.length * 52 + 130 : 130
+
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white px-5 pt-10 pb-24">
@@ -62,58 +70,81 @@ export default function DashboardPage() {
       </div>
 
       {/* Card stack */}
-      <div className="relative mb-8" style={{ height: stackHeight }}>
-        {loading ? (
-          <>
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="absolute w-full rounded-[18px] animate-pulse bg-zinc-200"
-                style={{ top: i * 52, height: 130, zIndex: i }}
-              />
-            ))}
-          </>
-        ) : cards.length === 0 ? (
-          <div className="w-full h-[130px] rounded-[18px] border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
-            <p className="text-sm text-zinc-400">No cards yet</p>
-            <Link href="/cards/new" className="text-xs font-medium text-zinc-900 underline">
-              Add your first card
-            </Link>
-          </div>
-        ) : (
-          cards.map((card, i) => (
-            <div
-              key={card.id}
-              className="absolute w-full cursor-pointer"
-              style={{ top: i * 52, zIndex: i, height: 130 }}
-              onClick={() => router.push(`/cards/${card.id}`)}
-            >
-              <LoyaltyCard
-                id={card.id}
-                storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
-                cardholderName={card.cardholderName || ""}
-                type={card.type}
-                color={card.color}
-                cardNumber={card.cardPhoneId?.cardNumber}
-                phoneNumber={card.cardPhoneId?.phoneNumber}
-              />
+      <div
+        className="relative mb-8"
+        style={{ height: stackHeight }}
+        onTouchStart={(e) => {
+          touchStartX.current = e.touches[0].clientX
+          touchStartY.current = e.touches[0].clientY
+        }}
+        onTouchEnd={(e) => {
+          const deltaX = e.changedTouches[0].clientX - touchStartX.current
+          const deltaY = e.changedTouches[0].clientY - touchStartY.current
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+            if (deltaX < 0 && currentPage < totalPages - 1) setCurrentPage(p => p + 1)
+            if (deltaX > 0 && currentPage > 0) setCurrentPage(p => p - 1)
+          }
+        }}
+        onMouseDown={(e) => { mouseStartX.current = e.clientX }}
+        onMouseUp={(e) => {
+          const deltaX = e.clientX - mouseStartX.current
+          if (Math.abs(deltaX) > 40) {
+            if (deltaX < 0 && currentPage < totalPages - 1) setCurrentPage(p => p + 1)
+            if (deltaX > 0 && currentPage > 0) setCurrentPage(p => p - 1)
+          }
+        }}
+      >
+          {loading ? (
+            <>
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="absolute w-full rounded-[18px] animate-pulse bg-zinc-200"
+                  style={{ top: i * 52, height: 130, zIndex: i }}
+                />
+              ))}
+            </>
+          ) : cards.length === 0 ? (
+            <div className="w-full h-[130px] rounded-[18px] border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
+              <p className="text-sm text-zinc-400">No cards yet</p>
+              <Link href="/cards/new" className="text-xs font-medium text-zinc-900 underline">
+                Add your first card
+              </Link>
             </div>
-          ))
-        )}
+          ) : (
+            visibleCards.map((card, i) => (
+              <div
+                key={card.id}
+                className="absolute w-full cursor-pointer"
+                style={{ top: i * 52, zIndex: i, height: 130 }}
+                onClick={() => router.push(`/cards/${card.id}`)}
+              >
+                <LoyaltyCard
+                  id={card.id}
+                  storeName={card.storeNameCustom || card.store?.name || "Unknown store"}
+                  cardholderName={card.cardholderName || ""}
+                  type={card.type}
+                  color={card.color}
+                  cardNumber={card.cardPhoneId?.cardNumber}
+                  phoneNumber={card.cardPhoneId?.phoneNumber}
+                />
+              </div>
+            ))
+          )}
       </div>
 
-      {/* Dot indicators */}
-      {!loading && cards.length > 1 && (
+      {/* Page dots */}
+      {!loading && totalPages > 1 && (
         <div className="flex items-center justify-center gap-1.5 mb-8">
-          {cards.map((_, i) => (
+          {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
-              onClick={() => setActiveCard(i)}
+              onClick={() => setCurrentPage(i)}
               className="transition-all duration-200 rounded-full bg-zinc-900"
               style={{
-                width: i === activeCard ? 12 : 5,
+                width: i === currentPage ? 12 : 5,
                 height: 5,
-                opacity: i === activeCard ? 1 : 0.25,
+                opacity: i === currentPage ? 1 : 0.25,
               }}
             />
           ))}
