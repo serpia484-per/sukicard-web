@@ -29,6 +29,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4">
+      <title>Admin | SukiCard</title>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-zinc-200 px-8 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Admin Panel</h1>

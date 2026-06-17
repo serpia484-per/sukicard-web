@@ -83,6 +83,7 @@ export default function AdminFeatureFlagsPage() {
 
   return (
     <div>
+      <title>Feature Flags | SukiCard</title>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-zinc-900">Feature Flags</h1>
         <p className="text-sm text-zinc-400 mt-0.5">Toggle features across the platform</p>

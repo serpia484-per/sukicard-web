@@ -32,6 +32,7 @@ export default function LoginPage() {
 
   return (
     <>
+      <title>Sign in | SukiCard</title>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Welcome back</h1>
         <p className="text-sm text-zinc-500 mt-1">Sign in to your SukiCard account</p>

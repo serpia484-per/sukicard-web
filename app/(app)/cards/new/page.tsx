@@ -553,26 +553,37 @@ export default function NewCardPage() {
   const [successStoreName, setSuccessStoreName] = useState("")
 
   if (step === 3) {
-    return <StepSuccess storeName={successStoreName} />
+    return (
+      <>
+        <title>Add Card | SukiCard</title>
+        <StepSuccess storeName={successStoreName} />
+      </>
+    )
   }
 
   if (step === 2 && cardType) {
     return (
-      <StepCardDetails
-        cardType={cardType}
-        onBack={() => setStep(1)}
-        onSuccess={(name) => {
-          setSuccessStoreName(name)
-          setStep(3)
-        }}
-      />
+      <>
+        <title>Add Card | SukiCard</title>
+        <StepCardDetails
+          cardType={cardType}
+          onBack={() => setStep(1)}
+          onSuccess={(name) => {
+            setSuccessStoreName(name)
+            setStep(3)
+          }}
+        />
+      </>
     )
   }
 
   return (
-    <StepChooseType
-      onSelect={(t) => { setCardType(t); setStep(2) }}
-      onBack={() => router.back()}
-    />
+    <>
+      <title>Add Card | SukiCard</title>
+      <StepChooseType
+        onSelect={(t) => { setCardType(t); setStep(2) }}
+        onBack={() => router.back()}
+      />
+    </>
   )
 }

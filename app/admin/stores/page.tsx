@@ -195,6 +195,7 @@ export default function AdminStoresPage() {
 
   return (
     <div>
+      <title>Stores | SukiCard</title>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-zinc-900">Stores</h1>

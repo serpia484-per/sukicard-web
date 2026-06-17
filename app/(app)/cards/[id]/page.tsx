@@ -298,6 +298,7 @@ export default function CardDetailPage() {
 
   return (
     <>
+      <title>Card | SukiCard</title>
       <div className="max-w-md mx-auto min-h-screen bg-white px-5 pt-10 pb-24">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

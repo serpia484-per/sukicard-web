@@ -68,6 +68,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white px-5 pt-10 pb-24">
+      <title>My Cards | SukiCard</title>
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>

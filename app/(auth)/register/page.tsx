@@ -55,6 +55,7 @@ export default function RegisterPage() {
 
   return (
     <>
+      <title>Create account | SukiCard</title>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Create account</h1>
         <p className="text-sm text-zinc-500 mt-1">Start managing your loyalty cards</p>

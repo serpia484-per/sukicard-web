@@ -64,6 +64,7 @@ export default function AdminUsersPage() {
 
   return (
     <div>
+      <title>Users | SukiCard</title>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-zinc-900">Users</h1>
         {!loading && (

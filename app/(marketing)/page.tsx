@@ -1,4 +1,9 @@
+import type { Metadata } from "next"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "SukiCard — Your loyalty cards, all in one place",
+}
 
 export default function LandingPage() {
   return (
