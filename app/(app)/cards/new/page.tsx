@@ -121,14 +121,10 @@ function PrimaryButton({
 // ─── Step 1: Choose type ──────────────────────────────────────────────────────
 
 function StepChooseType({
-  selected,
   onSelect,
-  onContinue,
   onBack,
 }: {
-  selected: CardType | null
   onSelect: (t: CardType) => void
-  onContinue: () => void
   onBack: () => void
 }) {
   return (
@@ -139,30 +135,17 @@ function StepChooseType({
       <p className="text-sm text-zinc-400 mt-1 mb-6">How is your loyalty card stored?</p>
 
       <div className="flex flex-col gap-3 flex-1">
-        {CARD_TYPES.map(({ value, label, description, icon: Icon }) => {
-          const active = selected === value
-          return (
-            <button
-              key={value}
-              onClick={() => onSelect(value)}
-              className={`w-full text-left rounded-2xl p-5 border-2 transition ${
-                active
-                  ? "border-zinc-900 bg-zinc-50"
-                  : "border-zinc-200 bg-white hover:border-zinc-300"
-              }`}
-            >
-              <Icon size={32} stroke={1.5} className="text-zinc-700 mb-3" />
-              <p className="font-medium text-zinc-900 text-sm">{label}</p>
-              <p className="text-sm text-zinc-400 mt-0.5">{description}</p>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="pt-6">
-        <PrimaryButton disabled={!selected} onClick={onContinue}>
-          Continue
-        </PrimaryButton>
+        {CARD_TYPES.map(({ value, label, description, icon: Icon }) => (
+          <button
+            key={value}
+            onClick={() => onSelect(value)}
+            className="w-full text-left rounded-2xl p-5 border-2 border-zinc-200 bg-white hover:border-zinc-300 transition"
+          >
+            <Icon size={32} stroke={1.5} className="text-zinc-700 mb-3" />
+            <p className="font-medium text-zinc-900 text-sm">{label}</p>
+            <p className="text-sm text-zinc-400 mt-0.5">{description}</p>
+          </button>
+        ))}
       </div>
 
       <BottomNav />
@@ -588,9 +571,7 @@ export default function NewCardPage() {
 
   return (
     <StepChooseType
-      selected={cardType}
-      onSelect={setCardType}
-      onContinue={() => setStep(2)}
+      onSelect={(t) => { setCardType(t); setStep(2) }}
       onBack={() => router.back()}
     />
   )
