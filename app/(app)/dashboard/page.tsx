@@ -20,7 +20,13 @@ interface Card {
 }
 
 const FILTERS = ["All", "Grocery", "Pharmacy", "Food", "Fashion", "Convenience", "Bookstore"]
-const PAGE_SIZE = 5
+
+interface Config {
+  show_browse_stores_on_dashboard: boolean
+  cards_per_page: number
+}
+
+const DEFAULT_CONFIG: Config = { show_browse_stores_on_dashboard: true, cards_per_page: 5 }
 
 export default function DashboardPage() {
   useAuth()
@@ -29,12 +35,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
   const [activeFilter, setActiveFilter] = useState("All")
+  const [config, setConfig] = useState<Config>(DEFAULT_CONFIG)
 
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const mouseStartX = useRef(0)
 
   useEffect(() => {
+    api.get<Config>("/config").then(({ data }) => setConfig(data)).catch(() => {})
     console.time("[dashboard] GET /cards")
     api
       .get("/cards")
@@ -46,15 +54,16 @@ export default function DashboardPage() {
       })
   }, [])
 
-  const totalPages = Math.ceil(cards.length / PAGE_SIZE)
+  const pageSize = config.cards_per_page ?? 5
+  const totalPages = Math.ceil(cards.length / pageSize)
 
-  // Height is based on max cards per page (5), except when there's only one partial page
-  const maxCardsOnAnyPage = loading ? 3 : cards.length === 0 ? 0 : Math.min(PAGE_SIZE, cards.length)
+  // Height is based on max cards per page, except when there's only one partial page
+  const maxCardsOnAnyPage = loading ? 3 : cards.length === 0 ? 0 : Math.min(pageSize, cards.length)
   const stackHeight = loading ? 130 + 2 * 52 : cards.length === 0 ? 130 : maxCardsOnAnyPage * 52 + 130
 
   // Split cards into pages
   const pages = Array.from({ length: Math.max(1, totalPages) }, (_, p) =>
-    cards.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE)
+    cards.slice(p * pageSize, p * pageSize + pageSize)
   )
 
   return (
@@ -181,24 +190,26 @@ export default function DashboardPage() {
       )}
 
       {/* Browse stores section */}
-      <div>
-        <h2 className="text-base font-medium text-zinc-900 mb-3">Browse stores</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition ${
-                activeFilter === f
-                  ? "bg-zinc-900 text-white"
-                  : "bg-white text-zinc-500 border border-zinc-200"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+      {config.show_browse_stores_on_dashboard && (
+        <div>
+          <h2 className="text-base font-medium text-zinc-900 mb-3">Browse stores</h2>
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                  activeFilter === f
+                    ? "bg-zinc-900 text-white"
+                    : "bg-white text-zinc-500 border border-zinc-200"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <BottomNav />
     </div>
