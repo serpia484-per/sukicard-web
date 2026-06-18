@@ -42,14 +42,14 @@ export default function DashboardPage() {
   const mouseStartX = useRef(0)
 
   useEffect(() => {
-    api.get<Config>("/config").then(({ data }) => setConfig(data)).catch(() => {})
-    console.time("[dashboard] GET /cards")
-    api
-      .get("/cards")
-      .then(({ data }) => setCards(data))
-      .catch(() => setCards([]))
+    console.time("[dashboard] load")
+    Promise.allSettled([api.get("/cards"), api.get<Config>("/config")])
+      .then(([cardsRes, configRes]) => {
+        if (cardsRes.status === "fulfilled") setCards(cardsRes.value.data)
+        if (configRes.status === "fulfilled") setConfig(configRes.value.data)
+      })
       .finally(() => {
-        console.timeEnd("[dashboard] GET /cards")
+        console.timeEnd("[dashboard] load")
         setLoading(false)
       })
   }, [])
@@ -191,7 +191,7 @@ export default function DashboardPage() {
       )}
 
       {/* Browse stores section */}
-      {config.show_browse_stores_on_dashboard && (
+      {!loading && config.show_browse_stores_on_dashboard && (
         <div>
           <h2 className="text-base font-medium text-zinc-900 mb-3">Browse stores</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none">
