@@ -69,15 +69,16 @@ const BARCODE_FORMATS: { value: BarcodeFormat; label: string }[] = [
   { value: "EAN_8", label: "EAN-8" },
 ]
 
+const FORMAT_MAP: Record<string, BarcodeFormat> = {
+  QR_CODE: "QR_CODE",
+  CODE_128: "CODE_128",
+  EAN_13: "EAN_13",
+  EAN_8: "EAN_8",
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function PageHeader({
-  onBack,
-  title,
-}: {
-  onBack: () => void
-  title?: string
-}) {
+function PageHeader({ onBack, title }: { onBack: () => void; title?: string }) {
   return (
     <div className="flex items-center gap-3 mb-6">
       <button
@@ -251,31 +252,29 @@ function StoreSearchInput({
 
 // ─── Step 2: Card details ─────────────────────────────────────────────────────
 
-const FORMAT_MAP: Record<string, BarcodeFormat> = {
-  QR_CODE: "QR_CODE",
-  CODE_128: "CODE_128",
-  EAN_13: "EAN_13",
-  EAN_8: "EAN_8",
-}
-
 function StepCardDetails({
   cardType,
+  initialBarcodeValue = "",
+  initialBarcodeFormat = "QR_CODE",
+  initialPhotoDataUrl = null,
   onBack,
   onSuccess,
 }: {
   cardType: CardType
+  initialBarcodeValue?: string
+  initialBarcodeFormat?: BarcodeFormat
+  initialPhotoDataUrl?: string | null
   onBack: () => void
   onSuccess: (storeName: string) => void
 }) {
   const [storeName, setStoreName] = useState("")
   const [storeId, setStoreId] = useState<string | null>(null)
   const [storeNameCustom, setStoreNameCustom] = useState("")
-  const [holderName, setHolderName] = useState("")
   const [color, setColor] = useState(COLORS[0])
   const [phoneId, setPhoneId] = useState("")
-  const [barcodeValue, setBarcodeValue] = useState("")
-  const [barcodeFormat, setBarcodeFormat] = useState<BarcodeFormat>("QR_CODE")
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [barcodeValue, setBarcodeValue] = useState(initialBarcodeValue)
+  const [barcodeFormat, setBarcodeFormat] = useState<BarcodeFormat>(initialBarcodeFormat)
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(initialPhotoDataUrl)
   const [showScanner, setShowScanner] = useState(false)
   const [showCamera, setShowCamera] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -289,7 +288,6 @@ function StepCardDetails({
 
   const valid =
     displayName.trim() &&
-    holderName.trim() &&
     (isPhoneId
       ? phoneId.trim()
       : isBarcode
@@ -305,7 +303,6 @@ function StepCardDetails({
         type: cardType,
         color,
         ...(storeId ? { storeId } : { storeNameCustom: displayName }),
-        cardholderName: holderName,
       }
       if (isPhoneId) {
         payload.cardPhoneId = { phoneNumber: phoneId }
@@ -322,8 +319,7 @@ function StepCardDetails({
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown; status?: number } }
       console.error("[add card] error:", axiosErr.response?.status, axiosErr.response?.data)
-      const message =
-        (axiosErr.response?.data as { message?: string })?.message
+      const message = (axiosErr.response?.data as { message?: string })?.message
       setError(message ?? "Failed to add card. Please try again.")
     } finally {
       setLoading(false)
@@ -332,7 +328,7 @@ function StepCardDetails({
 
   return (
     <>
-      {/* Overlays — rendered outside the scroll container */}
+      {/* Overlays */}
       {showScanner && (
         <BarcodeScanner
           onScan={(value, format) => {
@@ -380,18 +376,6 @@ function StepCardDetails({
             />
           </div>
 
-          {/* Your name */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-700">Your name</label>
-            <input
-              type="text"
-              value={holderName}
-              onChange={(e) => setHolderName(e.target.value)}
-              placeholder="As it appears on your card"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition"
-            />
-          </div>
-
           {/* Card color */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700">Card color</label>
@@ -424,7 +408,7 @@ function StepCardDetails({
             </div>
           )}
 
-          {/* Barcode scanner */}
+          {/* Barcode */}
           {isBarcode && (
             <>
               <div className="space-y-1.5">
@@ -474,7 +458,7 @@ function StepCardDetails({
             </>
           )}
 
-          {/* Photo capture */}
+          {/* Photo */}
           {isPhoto && (
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-700">Card photo</label>
@@ -545,12 +529,31 @@ function StepSuccess({ storeName }: { storeName: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type Overlay = "scanner" | "camera" | null
+
 export default function NewCardPage() {
   useAuth()
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [cardType, setCardType] = useState<CardType | null>(null)
+  const [overlay, setOverlay] = useState<Overlay>(null)
   const [successStoreName, setSuccessStoreName] = useState("")
+
+  // Pre-fill values captured before entering step 2
+  const [prefillBarcodeValue, setPrefillBarcodeValue] = useState("")
+  const [prefillBarcodeFormat, setPrefillBarcodeFormat] = useState<BarcodeFormat>("QR_CODE")
+  const [prefillPhotoDataUrl, setPrefillPhotoDataUrl] = useState<string | null>(null)
+
+  function handleTypeSelect(t: CardType) {
+    setCardType(t)
+    if (t === "BARCODE") {
+      setOverlay("scanner")
+    } else if (t === "PHOTO") {
+      setOverlay("camera")
+    } else {
+      setStep(2)
+    }
+  }
 
   if (step === 3) {
     return (
@@ -567,6 +570,9 @@ export default function NewCardPage() {
         <title>Add Card | SukiCard</title>
         <StepCardDetails
           cardType={cardType}
+          initialBarcodeValue={prefillBarcodeValue}
+          initialBarcodeFormat={prefillBarcodeFormat}
+          initialPhotoDataUrl={prefillPhotoDataUrl}
           onBack={() => setStep(1)}
           onSuccess={(name) => {
             setSuccessStoreName(name)
@@ -577,11 +583,42 @@ export default function NewCardPage() {
     )
   }
 
+  // Step 1 — type selection + scanner/camera overlays
   return (
     <>
       <title>Add Card | SukiCard</title>
+
+      {overlay === "scanner" && (
+        <BarcodeScanner
+          onScan={(value, format) => {
+            setPrefillBarcodeValue(value)
+            setPrefillBarcodeFormat(FORMAT_MAP[format] ?? "QR_CODE")
+            setOverlay(null)
+            setStep(2)
+          }}
+          onClose={() => {
+            setOverlay(null)
+            setCardType(null)
+          }}
+        />
+      )}
+
+      {overlay === "camera" && (
+        <PhotoCapture
+          onCapture={(dataUrl) => {
+            setPrefillPhotoDataUrl(dataUrl)
+            setOverlay(null)
+            setStep(2)
+          }}
+          onClose={() => {
+            setOverlay(null)
+            setCardType(null)
+          }}
+        />
+      )}
+
       <StepChooseType
-        onSelect={(t) => { setCardType(t); setStep(2) }}
+        onSelect={handleTypeSelect}
         onBack={() => router.back()}
       />
     </>
