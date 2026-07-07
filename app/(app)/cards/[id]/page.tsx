@@ -12,6 +12,7 @@ import { QRCodeSVG } from "qrcode.react"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { trackCardViewed } from "@/lib/analytics"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -263,7 +264,10 @@ export default function CardDetailPage() {
   useEffect(() => {
     api
       .get<CardDetail>(`/cards/${id}`)
-      .then(({ data }) => setCard(data))
+      .then(({ data }) => {
+        setCard(data)
+        trackCardViewed(data.type)
+      })
       .catch(() => router.push("/dashboard"))
       .finally(() => setLoading(false))
   }, [id, router])

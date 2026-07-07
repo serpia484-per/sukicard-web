@@ -13,6 +13,7 @@ import {
   IconCheck,
   IconX,
 } from "@tabler/icons-react"
+import posthog from "posthog-js"
 import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
 import { useAuth } from "@/lib/hooks/useAuth"
@@ -161,6 +162,7 @@ export default function ProfilePage() {
   }
 
   function handleSignOut() {
+    posthog.reset()
     Cookies.remove("sukicard_token")
     router.push("/login")
   }

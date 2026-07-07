@@ -4,7 +4,9 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
+import posthog from "posthog-js"
 import api from "@/lib/api"
+import { trackLogin } from "@/lib/analytics"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,6 +22,8 @@ export default function LoginPage() {
     try {
       const { data } = await api.post("/auth/login", { email, password })
       Cookies.set("sukicard_token", data.token, { expires: 7 })
+      posthog.identify(data.user.id, { email })
+      trackLogin()
       router.push("/dashboard")
     } catch (err: unknown) {
       const message =

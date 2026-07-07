@@ -14,6 +14,7 @@ import api from "@/lib/api"
 import BottomNav from "@/components/layout/BottomNav"
 import dynamic from "next/dynamic"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { trackCardAdded, trackScannerOpened, trackScanSuccess } from "@/lib/analytics"
 
 const BarcodeScanner = dynamic(() => import("@/components/scanner/BarcodeScanner"), { ssr: false })
 const PhotoCapture = dynamic(() => import("@/components/scanner/PhotoCapture"), { ssr: false })
@@ -315,6 +316,7 @@ function StepCardDetails({
       }
       console.log("[add card] payload:", JSON.stringify(payload))
       await api.post("/cards", payload)
+      trackCardAdded(cardType)
       onSuccess(displayName)
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown; status?: number } }
@@ -548,8 +550,10 @@ export default function NewCardPage() {
     setCardType(t)
     if (t === "BARCODE") {
       setOverlay("scanner")
+      trackScannerOpened()
     } else if (t === "PHOTO") {
       setOverlay("camera")
+      trackScannerOpened()
     } else {
       setStep(2)
     }
@@ -593,6 +597,7 @@ export default function NewCardPage() {
           onScan={(value, format) => {
             setPrefillBarcodeValue(value)
             setPrefillBarcodeFormat(FORMAT_MAP[format] ?? "QR_CODE")
+            trackScanSuccess(format)
             setOverlay(null)
             setStep(2)
           }}

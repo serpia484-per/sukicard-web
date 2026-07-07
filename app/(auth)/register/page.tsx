@@ -4,7 +4,9 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
+import posthog from "posthog-js"
 import api from "@/lib/api"
+import { trackRegister } from "@/lib/analytics"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -36,6 +38,8 @@ export default function RegisterPage() {
     try {
       const { data } = await api.post("/auth/register", { name, email, password })
       Cookies.set("sukicard_token", data.token, { expires: 7 })
+      posthog.identify(data.user.id, { email })
+      trackRegister()
       router.push("/dashboard")
     } catch (err: unknown) {
       const message =
