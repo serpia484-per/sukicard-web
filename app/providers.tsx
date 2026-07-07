@@ -12,6 +12,7 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
       person_profiles: "identified_only",
     })
+    console.log('[posthog] init', { hasKey: !!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN, host: process.env.NEXT_PUBLIC_POSTHOG_HOST })
   }, [])
 
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>
